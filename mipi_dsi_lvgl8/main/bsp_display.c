@@ -19,6 +19,8 @@
 #include "lvgl.h"
 #include "lv_demos.h"
 
+#include "esp_lvgl_port.h"
+
 static const char *TAG = "bsp_display";
 
 //
@@ -69,8 +71,6 @@ static const char *TAG = "bsp_display";
 #define EXAMPLE_LVGL_TASK_STACK_SIZE   (4 * 1024)
 #define EXAMPLE_LVGL_TASK_PRIORITY     2
 
-static SemaphoreHandle_t lvgl_api_mux = NULL;
-
 /////////////////////////////////////////////////////// 
 static bsp_display_on_trans_done_cb_t trans_done_cb;
 static bsp_display_on_vsync_cb_t vsync_cb;
@@ -80,114 +80,6 @@ static esp_lcd_panel_handle_t mipi_dpi_panel = NULL;
 static esp_lcd_panel_handle_t rm69a10_ctrl_panel= NULL;
 
 /////////////////////////////////////////////////////// 
-
-// LVGL
-static lv_disp_drv_t disp_drv;
-
- bool example_lvgl_lock(int timeout_ms)
-{
-    // Convert timeout in milliseconds to FreeRTOS ticks
-    // If `timeout_ms` is set to -1, the program will block until the condition is met
-    const TickType_t timeout_ticks = (timeout_ms == -1) ? portMAX_DELAY : pdMS_TO_TICKS(timeout_ms);
-    return xSemaphoreTakeRecursive(lvgl_api_mux, timeout_ticks) == pdTRUE;
-}
-
- void example_lvgl_unlock(void)
-{
-    xSemaphoreGiveRecursive(lvgl_api_mux);
-}
-
-static void example_lvgl_port_task(void *arg)
-{
-    ESP_LOGI(TAG, "Starting LVGL task");
-    uint32_t task_delay_ms = EXAMPLE_LVGL_TASK_MAX_DELAY_MS;
-    while (1) {
-        // Lock the mutex due to the LVGL APIs are not thread-safe
-        if (example_lvgl_lock(-1)) {
-            task_delay_ms = lv_timer_handler();
-            // Release the mutex
-            example_lvgl_unlock();
-        }
-        if (task_delay_ms > EXAMPLE_LVGL_TASK_MAX_DELAY_MS) {
-            task_delay_ms = EXAMPLE_LVGL_TASK_MAX_DELAY_MS;
-        } else if (task_delay_ms < EXAMPLE_LVGL_TASK_MIN_DELAY_MS) {
-            task_delay_ms = EXAMPLE_LVGL_TASK_MIN_DELAY_MS;
-        }
-        vTaskDelay(pdMS_TO_TICKS(task_delay_ms));
-    }
-}
-
-static void example_lvgl_flush_cb(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t *color_map)
-{
-    esp_lcd_panel_handle_t panel_handle = (esp_lcd_panel_handle_t) drv->user_data;
-    const int offsetx1 = area->x1;
-    const int offsetx2 = area->x2;
-    const int offsety1 = area->y1;
-    const int offsety2 = area->y2;
-
-    /* Just copy data from the color map to the RGB frame buffer */
-    esp_lcd_panel_draw_bitmap(panel_handle, offsetx1, offsety1, offsetx2 + 1, offsety2 + 1, color_map);
-    // lv_disp_flush_ready(&disp_drv);
-}
-
-static void increase_lvgl_tick(void *arg)
-{
-    /* Tell LVGL how many milliseconds have elapsed */
-    lv_tick_inc(EXAMPLE_LVGL_TICK_PERIOD_MS);
-}
-
-
-void lvgl_port_init(void)
-{
-    ESP_LOGI(TAG, "Initialize LVGL library");
-    lv_init();
-
-    static lv_disp_draw_buf_t disp_buf = { 0 }; 
-
-    void *buf1 = NULL;
-    void *buf2 = NULL;
-    size_t buffer_size = 0;
-
-    buffer_size = BSP_MIPI_DSI_LCD_H_RES * EXAMPLE_LVGL_DRAW_BUF_LINES * sizeof(lv_color_t);
-    buf1 = heap_caps_malloc(buffer_size, MALLOC_CAP_SPIRAM);
-    assert(buf1);
-    buf2 = heap_caps_malloc(buffer_size, MALLOC_CAP_SPIRAM);
-    assert(buf2);
-    ESP_LOGI(TAG, "LVGL buffer size: %dKB", buffer_size * LV_COLOR_DEPTH / 8 / 1024);
-    // initialize LVGL draw buffers
-    lv_disp_draw_buf_init(&disp_buf, buf1, buf2, buffer_size);
-
-    ESP_LOGD(TAG, "Register display driver to LVGL");
-    lv_disp_drv_init(&disp_drv);
-    disp_drv.hor_res = BSP_MIPI_DSI_LCD_H_RES;
-    disp_drv.ver_res = BSP_MIPI_DSI_LCD_V_RES;
-    disp_drv.flush_cb = example_lvgl_flush_cb;
-    disp_drv.draw_buf = &disp_buf;
-    disp_drv.user_data = mipi_dpi_panel;
-
-    lv_disp_drv_register(&disp_drv);
-
-
-    ESP_LOGI(TAG, "Use esp_timer as LVGL tick timer");
-    const esp_timer_create_args_t lvgl_tick_timer_args = {
-        .callback = &increase_lvgl_tick,
-        .name = "lvgl_tick"
-    };
-    esp_timer_handle_t lvgl_tick_timer = NULL;
-    ESP_ERROR_CHECK(esp_timer_create(&lvgl_tick_timer_args, &lvgl_tick_timer));
-    ESP_ERROR_CHECK(esp_timer_start_periodic(lvgl_tick_timer, EXAMPLE_LVGL_TICK_PERIOD_MS * 1000));
-
-    // LVGL APIs are meant to be called across the threads without protection, so we use a mutex here
-    lvgl_api_mux = xSemaphoreCreateRecursiveMutex();
-    assert(lvgl_api_mux);
-
-    ESP_LOGI(TAG, "Create LVGL task");
-    xTaskCreate(example_lvgl_port_task, "LVGL", EXAMPLE_LVGL_TASK_STACK_SIZE, NULL, EXAMPLE_LVGL_TASK_PRIORITY, NULL);
-
-    ESP_LOGI(TAG, "Display LVGL Meter Widget");
-    
-}
-
 
 // MIPI AMLOED
 void bsp_ldo_power_on(void)
@@ -209,17 +101,13 @@ void bsp_ldo_power_on(void)
 
 IRAM_ATTR static bool on_color_trans_done(esp_lcd_panel_handle_t panel, esp_lcd_dpi_panel_event_data_t *edata, void *user_ctx)
 {
-    // BaseType_t need_yield = pdFALSE;
-    // if (trans_done_cb) {
-    //     if (trans_done_cb(panel)) {
-    //         need_yield = pdTRUE;
-    //     }
-    // }
-    // return (need_yield == pdTRUE);
-
-    lv_disp_flush_ready(&disp_drv);
-    return true;
-    
+    BaseType_t need_yield = pdFALSE;
+    if (trans_done_cb) {
+        if (trans_done_cb(panel)) {
+            need_yield = pdTRUE;
+        }
+    }
+    return (need_yield == pdTRUE);
 }
 
 IRAM_ATTR static bool on_vsync(esp_lcd_panel_handle_t panel, esp_lcd_dpi_panel_event_data_t *edata, void *user_ctx)
@@ -230,7 +118,6 @@ IRAM_ATTR static bool on_vsync(esp_lcd_panel_handle_t panel, esp_lcd_dpi_panel_e
             need_yield = pdTRUE;
         }
     }
-
     return (need_yield == pdTRUE);
 }
 
@@ -307,8 +194,6 @@ esp_err_t bsp_display_new(const bsp_display_config_t *config, esp_lcd_panel_hand
         *ret_panel = mipi_dpi_panel;
     }
 
-    lvgl_port_init();
-
     return ESP_OK;
 }
 
@@ -324,3 +209,6 @@ esp_err_t bsp_display_register_callback(bsp_display_callback_t *callback)
 
     return ESP_OK;
 }
+
+
+// 
