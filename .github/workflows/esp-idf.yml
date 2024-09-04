@@ -41,12 +41,13 @@ jobs:
           ./install.sh
           . ./export.sh
           
+          echo -----------------------
           pwd
           echo HOME     : $HOME
           echo IDF_PATH : $IDF_PATH
 
           cd $PROJECT_PATHS
-
+          echo -----------------------
           pwd
           idf.py build
       
