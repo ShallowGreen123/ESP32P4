@@ -51,7 +51,6 @@ jobs:
 
       - name: Build and test each project
         run: |
-          . ${IDF_PATH}/export.sh
           for project in $PROJECT_PATHS; do
             echo "Building and testing project at $project"
             cd $project
