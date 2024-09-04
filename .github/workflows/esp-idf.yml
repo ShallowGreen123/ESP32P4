@@ -34,7 +34,7 @@ jobs:
           ./install.sh
           . ./export.sh
           
-          echo Path     : pwd
+          pwd
           echo HOME     : $HOME
           echo IDF_PATH : $IDF_PATH
 
@@ -46,8 +46,7 @@ jobs:
       - name: Find all projects
         id: find_projects
         run: |
-          echo "PROJECT_PATHS=${{ matrix.example }}" >> $GITHUB_ENV
-          echo GITHUB_ENV    : $GITHUB_ENV
+          PROJECT_PATHS=${{ matrix.example }}
           echo PROJECT_PATHS : $PROJECT_PATHS
 
       - name: Build and test each project
