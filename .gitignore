@@ -1,14 +1,11 @@
 
-i2c_tools/build/
-i2c_tools/.vscode
+esp32-p4-function-ev-board/
 
-touch_test/build/
-touch_test/.vscode
+.vscode
+build
 
-mipi_dsi_lvgl8/build/
-mipi_dsi_lvgl8/managed_components
-mipi_dsi_lvgl8/.vscode/
+dependencies.lock
+managed_components
 
-mipi_dsi_lvgl9/managed_components
-mipi_dsi_lvgl9/.vscode/
-examples/
+sdkconfig
+sdkconfig.old
