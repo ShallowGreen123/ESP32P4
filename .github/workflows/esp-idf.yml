@@ -47,9 +47,4 @@ jobs:
 
       - name: Build and test each project
         run: |
-          for project in ${PROJECT_PATHS[@]}"; do
-            echo "Building and testing project at $project"
-            cd $project
-            idf.py build
-            cd -
-          done
+          bash .github/scripts/compile.sh
