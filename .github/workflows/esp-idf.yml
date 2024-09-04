@@ -1,0 +1,69 @@
+name: PlatformIO CI
+
+on:
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+  push:
+    paths:
+      - "examples/**"
+      - ".github/workflows/esp-idf.yml"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest  # 指定的运行器环境中运行 [ubuntu-latest, macos-latest, windows-latest]
+    strategy:
+      matrix:
+        example: 
+          - examples/nvs_rw_blob
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.8'  # or any other version supported by ESP-IDF
+
+          
+
+      - name: Install ESP-IDF tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y git wget flex bison gperf python3 python3-pip python3-setuptools cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0
+          git clone --depth 1 --branch v5.3 https://github.com/espressif/esp-idf.git
+          cd esp-idf
+          ./install.sh
+          . ./export.sh
+
+      # - name: Set up ESP-IDF environment
+      #   run: |
+      #     echo "::set-env name=IDF_PATH::${GITHUB_WORKSPACE}/esp-idf"
+      #     echo ". ${GITHUB_WORKSPACE}/esp-idf/export.sh" >> $GITHUB_ENV
+      
+      - name: Find all projects
+        id: find_projects
+        run: |
+          echo "PROJECT_PATHS=${{ matrix.example }}" >> $GITHUB_ENV
+
+      - name: Build and test each project
+        run: |
+          . $GITHUB_ENV
+          for project in $PROJECT_PATHS; do
+            echo "Building and testing project at $project"
+            cd $project
+            idf.py build
+            # idf.py test
+            cd -
+          done
+  
+      # - name: Build the project
+      #   run: |
+      #     . $GITHUB_ENV
+      #     idf.py build
+  
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: build
+          path: build/
