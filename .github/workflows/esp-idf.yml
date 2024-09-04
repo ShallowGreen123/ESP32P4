@@ -15,6 +15,7 @@ jobs:
       matrix:
         example: 
           - examples/nvs_rw_blob
+          - examples/i2c_tools
 
     steps:
       - name: Checkout code
@@ -37,11 +38,6 @@ jobs:
           pwd
           echo HOME     : $HOME
           echo IDF_PATH : $IDF_PATH
-
-      # - name: Set up ESP-IDF environment
-      #   run: |
-      #     echo "::set-env name=IDF_PATH::${GITHUB_WORKSPACE}/esp-idf"
-      #     echo ". ${GITHUB_WORKSPACE}/esp-idf/export.sh" >> $GITHUB_ENV
       
       - name: Find all projects
         id: find_projects
@@ -51,20 +47,9 @@ jobs:
 
       - name: Build and test each project
         run: |
-          for project in $PROJECT_PATHS; do
+          for project in ${PROJECT_PATHS[@]}"; do
             echo "Building and testing project at $project"
             cd $project
             idf.py build
             cd -
           done
-  
-      # - name: Build the project
-      #   run: |
-      #     . $GITHUB_ENV
-      #     idf.py build
-  
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          name: build
-          path: build/
