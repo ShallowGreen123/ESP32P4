@@ -26,6 +26,12 @@ jobs:
         with:
           python-version: '3.8'  # or any other version supported by ESP-IDF
 
+      - name: Find all projects
+        id: find_projects
+        run: |
+          PROJECT_PATHS=${{ matrix.example }}
+          echo PROJECT_PATHS : $PROJECT_PATHS
+
       - name: Install ESP-IDF tools
         run: |
           sudo apt-get update
@@ -38,18 +44,22 @@ jobs:
           pwd
           echo HOME     : $HOME
           echo IDF_PATH : $IDF_PATH
-      
-      - name: Find all projects
-        id: find_projects
-        run: |
-          PROJECT_PATHS=${{ matrix.example }}
-          echo PROJECT_PATHS : $PROJECT_PATHS
 
-      - name: Build and test each project
-        run: |
-          echo "Building and testing project at $PROJECT_PATHS"
           cd $PROJECT_PATHS
           idf.py set-target esp32p4
           idf.py build
-          cd -
+      
+      # - name: Find all projects
+      #   id: find_projects
+      #   run: |
+      #     PROJECT_PATHS=${{ matrix.example }}
+      #     echo PROJECT_PATHS : $PROJECT_PATHS
+
+      # - name: Build and test each project
+      #   run: |
+      #     echo "Building and testing project at $PROJECT_PATHS"
+      #     cd $PROJECT_PATHS
+      #     idf.py set-target esp32p4
+      #     idf.py build
+      #     cd -
           
