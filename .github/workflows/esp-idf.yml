@@ -33,6 +33,10 @@ jobs:
           cd esp-idf
           ./install.sh
           . ./export.sh
+          
+          echo Path     : pwd
+          echo HOME     : $HOME
+          echo IDF_PATH : $IDF_PATH
 
       # - name: Set up ESP-IDF environment
       #   run: |
@@ -43,12 +47,11 @@ jobs:
         id: find_projects
         run: |
           echo "PROJECT_PATHS=${{ matrix.example }}" >> $GITHUB_ENV
-          echo $GITHUB_ENV
-          echo $PROJECT_PATHS
+          echo GITHUB_ENV    : $GITHUB_ENV
+          echo PROJECT_PATHS : $PROJECT_PATHS
 
       - name: Build and test each project
         run: |
-          . $GITHUB_ENV
           . ${IDF_PATH}/export.sh
           for project in $PROJECT_PATHS; do
             echo "Building and testing project at $project"
