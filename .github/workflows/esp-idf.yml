@@ -46,7 +46,8 @@ jobs:
           echo IDF_PATH : $IDF_PATH
 
           cd $PROJECT_PATHS
-          idf.py set-target esp32p4
+
+          pwd
           idf.py build
       
       # - name: Find all projects
