@@ -47,4 +47,9 @@ jobs:
 
       - name: Build and test each project
         run: |
-          bash .github/scripts/compile.sh
+          echo "Building and testing project at $PROJECT_PATHS"
+          cd $PROJECT_PATHS
+          idf.py set-target esp32p4
+          idf.py build
+          cd -
+          
