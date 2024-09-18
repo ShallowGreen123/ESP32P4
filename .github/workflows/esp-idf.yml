@@ -18,6 +18,7 @@ jobs:
         example: 
           - examples/nvs_rw_blob
           - examples/i2c_tools
+          - examples/mipi_dsi_lvgl9
 
     container: espressif/idf:${{ matrix.idf_ver }}
     steps:
