@@ -160,9 +160,33 @@ static int do_i2cget_cmd(int argc, char **argv)
     /* Check chip address: "-c" option */
     int chip_addr = i2cget_args.chip_address->ival[0];
     /* Check register address: "-r" option */
+    uint8_t tx_buf[4] = {0};
+    int tx_buf_len = 0; 
+
     int data_addr = -1;
     if (i2cget_args.register_address->count) {
         data_addr = i2cget_args.register_address->ival[0];
+
+        if(data_addr > 0xFFFF) {
+            tx_buf[0] = (data_addr >> 24) & 0xFF;
+            tx_buf[1] = (data_addr >> 16) & 0xFF;
+            tx_buf[2] = (data_addr >> 8) & 0xFF;
+            tx_buf[3] =  data_addr & 0xFF;
+
+            tx_buf_len = 4;
+        } else if(data_addr > 0xFF) {
+            tx_buf[0] = (data_addr >> 8) & 0xFF;
+            tx_buf[1] = data_addr & 0xFF;
+
+            tx_buf_len = 2;
+        } else {
+            tx_buf[0] = data_addr & 0xFF;;
+
+            tx_buf_len = 1;
+        }
+
+        ESP_LOGI(TAG, "reg = 0x%x, reg_len = %d", data_addr, sizeof(tx_buf_len));
+
     }
     /* Check data length: "-l" option */
     int len = 1;
@@ -180,7 +204,7 @@ static int do_i2cget_cmd(int argc, char **argv)
         return 1;
     }
 
-    esp_err_t ret = i2c_master_transmit_receive(dev_handle, (uint8_t*)&data_addr, 1, data, len, I2C_TOOL_TIMEOUT_VALUE_MS);
+    esp_err_t ret = i2c_master_transmit_receive(dev_handle, tx_buf, tx_buf_len, data, len, I2C_TOOL_TIMEOUT_VALUE_MS);
     if (ret == ESP_OK) {
         for (int i = 0; i < len; i++) {
             printf("0x%02x ", data[i]);
