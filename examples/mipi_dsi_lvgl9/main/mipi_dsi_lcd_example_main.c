@@ -27,17 +27,17 @@ static const char *TAG = "example";
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // FPS = 80000000/(40+140+40+800)/(4+16+16+1280) = 60Hz
-#define EXAMPLE_MIPI_DSI_DPI_CLK_MHZ  80
-#define EXAMPLE_MIPI_DSI_LCD_H_RES    568
-#define EXAMPLE_MIPI_DSI_LCD_V_RES    1232
-#define EXAMPLE_MIPI_DSI_LCD_HSYNC    40
-#define EXAMPLE_MIPI_DSI_LCD_HBP      140
-#define EXAMPLE_MIPI_DSI_LCD_HFP      40
-#define EXAMPLE_MIPI_DSI_LCD_VSYNC    4
-#define EXAMPLE_MIPI_DSI_LCD_VBP      16
-#define EXAMPLE_MIPI_DSI_LCD_VFP      16
+#define EXAMPLE_MIPI_DSI_DPI_CLK_MHZ 80
+#define EXAMPLE_MIPI_DSI_LCD_H_RES 568
+#define EXAMPLE_MIPI_DSI_LCD_V_RES 1232
+#define EXAMPLE_MIPI_DSI_LCD_HSYNC 40
+#define EXAMPLE_MIPI_DSI_LCD_HBP 140
+#define EXAMPLE_MIPI_DSI_LCD_HFP 40
+#define EXAMPLE_MIPI_DSI_LCD_VSYNC 4
+#define EXAMPLE_MIPI_DSI_LCD_VBP 16
+#define EXAMPLE_MIPI_DSI_LCD_VFP 16
 
-#define EXAMPLE_MIPI_DSI_LANE_NUM          2    // 2 data lanes
+#define EXAMPLE_MIPI_DSI_LANE_NUM 2             // 2 data lanes
 #define EXAMPLE_MIPI_DSI_LANE_BITRATE_MBPS 1000 // 1Gbps
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -45,31 +45,31 @@ static const char *TAG = "example";
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // The "VDD_MIPI_DPHY" should be supplied with 2.5V, it can source from the internal LDO regulator or from external LDO chip
-#define EXAMPLE_MIPI_DSI_PHY_PWR_LDO_CHAN       3  // LDO_VO3 is connected to VDD_MIPI_DPHY
+#define EXAMPLE_MIPI_DSI_PHY_PWR_LDO_CHAN 3 // LDO_VO3 is connected to VDD_MIPI_DPHY
 #define EXAMPLE_MIPI_DSI_PHY_PWR_LDO_VOLTAGE_MV 2500
-#define EXAMPLE_LCD_BK_LIGHT_ON_LEVEL           1
-#define EXAMPLE_LCD_BK_LIGHT_OFF_LEVEL          !EXAMPLE_LCD_BK_LIGHT_ON_LEVEL
-#define EXAMPLE_PIN_NUM_BK_LIGHT                26
-#define EXAMPLE_PIN_NUM_LCD_RST                 27
+#define EXAMPLE_LCD_BK_LIGHT_ON_LEVEL 1
+#define EXAMPLE_LCD_BK_LIGHT_OFF_LEVEL !EXAMPLE_LCD_BK_LIGHT_ON_LEVEL
+#define EXAMPLE_PIN_NUM_BK_LIGHT 26
+#define EXAMPLE_PIN_NUM_LCD_RST 27
 
 #if CONFIG_EXAMPLE_MONITOR_FPS_BY_GPIO
-#define EXAMPLE_PIN_NUM_FPS_MONITOR             20  // Monitor the FPS by toggling the GPIO
+#define EXAMPLE_PIN_NUM_FPS_MONITOR 20 // Monitor the FPS by toggling the GPIO
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////// Please update the following configuration according to your Application ///////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#define EXAMPLE_LVGL_DRAW_BUF_LINES    200 // number of display lines in each draw buffer
-#define EXAMPLE_LVGL_TICK_PERIOD_MS    2
+#define EXAMPLE_LVGL_DRAW_BUF_LINES 200 // number of display lines in each draw buffer
+#define EXAMPLE_LVGL_TICK_PERIOD_MS 2
 #define EXAMPLE_LVGL_TASK_MAX_DELAY_MS 500
 #define EXAMPLE_LVGL_TASK_MIN_DELAY_MS 1
-#define EXAMPLE_LVGL_TASK_STACK_SIZE   (4 * 1024)
-#define EXAMPLE_LVGL_TASK_PRIORITY     2
+#define EXAMPLE_LVGL_TASK_STACK_SIZE (4 * 1024)
+#define EXAMPLE_LVGL_TASK_PRIORITY 2
 
-#define LVGL_PORT_LCD_DPI_BUFFER_NUMS   (1)
-#define LVGL_PORT_FULL_REFRESH          (0)
-#define LVGL_PORT_DIRECT_MODE           (0)
+#define LVGL_PORT_LCD_DPI_BUFFER_NUMS (1)
+#define LVGL_PORT_FULL_REFRESH (0)
+#define LVGL_PORT_DIRECT_MODE (0)
 
 static SemaphoreHandle_t lvgl_api_mux = NULL;
 
@@ -96,7 +96,7 @@ static bool example_lvgl_lock(int timeout_ms)
 {
     // Convert timeout in milliseconds to FreeRTOS ticks
     // If `timeout_ms` is set to -1, the program will block until the condition is met
-    const TickType_t timeout_ticks = (timeout_ms == -1) ? portMAX_DELAY : pdMS_TO_TICKS(timeout_ms);
+    const TickType_t timeout_ticks = (timeout_ms == 0) ? portMAX_DELAY : pdMS_TO_TICKS(timeout_ms);
     return xSemaphoreTakeRecursive(lvgl_api_mux, timeout_ticks) == pdTRUE;
 }
 
@@ -109,16 +109,21 @@ static void example_lvgl_port_task(void *arg)
 {
     ESP_LOGI(TAG, "Starting LVGL task");
     uint32_t task_delay_ms = EXAMPLE_LVGL_TASK_MAX_DELAY_MS;
-    while (1) {
+    while (1)
+    {
         // Lock the mutex due to the LVGL APIs are not thread-safe
-        if (example_lvgl_lock(-1)) {
+        if (example_lvgl_lock(0))
+        {
             task_delay_ms = lv_timer_handler();
             // Release the mutex
             example_lvgl_unlock();
         }
-        if (task_delay_ms > EXAMPLE_LVGL_TASK_MAX_DELAY_MS) {
+        if (task_delay_ms > EXAMPLE_LVGL_TASK_MAX_DELAY_MS)
+        {
             task_delay_ms = EXAMPLE_LVGL_TASK_MAX_DELAY_MS;
-        } else if (task_delay_ms < EXAMPLE_LVGL_TASK_MIN_DELAY_MS) {
+        }
+        else if (task_delay_ms < EXAMPLE_LVGL_TASK_MIN_DELAY_MS)
+        {
             task_delay_ms = EXAMPLE_LVGL_TASK_MIN_DELAY_MS;
         }
         vTaskDelay(pdMS_TO_TICKS(task_delay_ms));
@@ -162,8 +167,7 @@ static void example_bsp_init_lcd_backlight(void)
 #if EXAMPLE_PIN_NUM_BK_LIGHT >= 0
     gpio_config_t bk_gpio_config = {
         .mode = GPIO_MODE_OUTPUT,
-        .pin_bit_mask = 1ULL << EXAMPLE_PIN_NUM_BK_LIGHT
-    };
+        .pin_bit_mask = 1ULL << EXAMPLE_PIN_NUM_BK_LIGHT};
     ESP_ERROR_CHECK(gpio_config(&bk_gpio_config));
 #endif
 }
@@ -185,6 +189,34 @@ static void example_bsp_init_fps_monitor_io(void)
     ESP_ERROR_CHECK(gpio_config(&monitor_io_conf));
 }
 #endif
+
+extern void bsp_touch_new(void);
+static void lvgl_touchpad_init(void)
+{
+    bsp_touch_new();
+}
+
+extern int touchpad_read_point(int32_t *last_x, int32_t *last_y, int point_num);
+
+static void lvgl_port_touchpad_read(lv_indev_t *indev_drv, lv_indev_data_t *data)
+{
+    static int32_t last_x = 0;
+    static int32_t last_y = 0;
+
+    if (touchpad_read_point(&last_x, &last_y, 1) > 0)
+    {
+
+        ESP_LOGI(TAG, "touch x=%d, y=%d", data->point.x, data->point.y);
+        data->state = LV_INDEV_STATE_PR;
+    }
+    else
+    {
+        data->state = LV_INDEV_STATE_REL;
+    }
+
+    data->point.x = lv_map(last_x, 0, 1024, 0, EXAMPLE_MIPI_DSI_LCD_H_RES);
+    data->point.y = lv_map(last_y, 0, 2400, 0, EXAMPLE_MIPI_DSI_LCD_V_RES);
+}
 
 void app_main(void)
 {
@@ -278,6 +310,14 @@ void app_main(void)
     // set the callback which can copy the rendered image to an area of the display
     lv_display_set_flush_cb(display, example_lvgl_flush_cb);
 
+    // LVGL input
+    lvgl_touchpad_init();
+
+    lv_indev_t *indev = NULL;
+    indev = lv_indev_create();
+    lv_indev_set_type(indev, LV_INDEV_TYPE_POINTER);
+    lv_indev_set_read_cb(indev, lvgl_port_touchpad_read);
+
     ESP_LOGI(TAG, "Register DPI panel event callback for LVGL flush ready notification");
     esp_lcd_dpi_panel_event_callbacks_t cbs = {
         .on_color_trans_done = example_notify_lvgl_flush_ready,
@@ -290,8 +330,7 @@ void app_main(void)
     ESP_LOGI(TAG, "Use esp_timer as LVGL tick timer");
     const esp_timer_create_args_t lvgl_tick_timer_args = {
         .callback = &example_increase_lvgl_tick,
-        .name = "lvgl_tick"
-    };
+        .name = "lvgl_tick"};
     esp_timer_handle_t lvgl_tick_timer = NULL;
     ESP_ERROR_CHECK(esp_timer_create(&lvgl_tick_timer_args, &lvgl_tick_timer));
     ESP_ERROR_CHECK(esp_timer_start_periodic(lvgl_tick_timer, EXAMPLE_LVGL_TICK_PERIOD_MS * 1000));
@@ -305,7 +344,8 @@ void app_main(void)
 
     ESP_LOGI(TAG, "Display LVGL Meter Widget");
     // Lock the mutex due to the LVGL APIs are not thread-safe
-    if (example_lvgl_lock(-1)) {
+    if (example_lvgl_lock(0))
+    {
         example_lvgl_demo_ui(display);
 
         // lv_demo_music();
@@ -317,5 +357,3 @@ void app_main(void)
         example_lvgl_unlock();
     }
 }
-
-
