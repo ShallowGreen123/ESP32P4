@@ -16,9 +16,10 @@ jobs:
         idf_ver: ["latest"]
 
         example: 
-          - examples/nvs_rw_blob
           - examples/i2c_tools
           - examples/mipi_dsi_lvgl9
+          - examples/nvs_rw_blob
+          - examples/touch_test
 
     container: espressif/idf:${{ matrix.idf_ver }}
     steps:
