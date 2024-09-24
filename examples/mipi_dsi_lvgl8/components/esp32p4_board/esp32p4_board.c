@@ -25,7 +25,7 @@
 static const char *TAG = "BSP";
 
 #if (BSP_CONFIG_NO_GRAPHIC_LIB == 0)
-static lv_indev_t *disp_indev = NULL;
+// static lv_indev_t *disp_indev = NULL;
 #endif // (BSP_CONFIG_NO_GRAPHIC_LIB == 0)
 
 static esp_lcd_panel_io_handle_t tp_io_handle = NULL;
@@ -224,10 +224,12 @@ err:
 
 
 #if (BSP_CONFIG_NO_GRAPHIC_LIB == 0)
-static void lvgl_port_touchpad_read(lv_indev_t *indev_drv, lv_indev_data_t *data)
+static void lvgl_port_touchpad_read(lv_indev_drv_t *indev_drv, lv_indev_data_t *data)
 {
     static int32_t last_x = 0;
     static int32_t last_y = 0;
+
+    (void)indev_drv;
 
     if (bsp_touchpad_read_point(&last_x, &last_y, 1) > 0)
     {

@@ -1,10 +1,6 @@
 idf_component_register(
 SRCS 
-    # "mipi_dsi_lcd_example_main.c"
     "main.c"
-    # "bsp_display.c"
-    # "lvgl_demo_ui.c"
-    # "p4_lcd_touch.c"
 INCLUDE_DIRS 
     ".")
 
