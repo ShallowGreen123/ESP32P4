@@ -3,7 +3,7 @@
 #include "sdkconfig.h"
 #include "driver/gpio.h"
 #include "driver/ledc.h"
-#include "driver/i2c.h"
+#include "driver/i2c_master.h"
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_check.h"
@@ -28,36 +28,30 @@ static const char *TAG = "BSP";
 static lv_indev_t *disp_indev = NULL;
 #endif // (BSP_CONFIG_NO_GRAPHIC_LIB == 0)
 
-static bool i2c_initialized = false;
 static esp_lcd_panel_io_handle_t tp_io_handle = NULL;
+static i2c_master_bus_handle_t i2c_bus_handle;
 
 esp_err_t bsp_i2c_init(void)
 {
+    static bool i2c_initialized = false;
     /* I2C was initialized before */
-    if (i2c_initialized) {
+    if (i2c_initialized)
+    {
         return ESP_OK;
     }
 
-    const i2c_config_t i2c_conf = {
-        .mode = I2C_MODE_MASTER,
-        .sda_io_num = BSP_I2C_SDA,
-        .sda_pullup_en = GPIO_PULLUP_DISABLE,
+    i2c_master_bus_config_t i2c_mst_config = {
+        .clk_source = I2C_CLK_SRC_DEFAULT,
+        .i2c_port = BSP_I2C_NUM,
         .scl_io_num = BSP_I2C_SCL,
-        .scl_pullup_en = GPIO_PULLUP_DISABLE,
-        .master.clk_speed = CONFIG_BSP_I2C_CLK_SPEED_HZ
+        .sda_io_num = BSP_I2C_SDA,
+        .flags.enable_internal_pullup = false, // no pull-up
+        .glitch_ignore_cnt = 7,
     };
-    BSP_ERROR_CHECK_RETURN_ERR(i2c_param_config(BSP_I2C_NUM, &i2c_conf));
-    BSP_ERROR_CHECK_RETURN_ERR(i2c_driver_install(BSP_I2C_NUM, i2c_conf.mode, 0, 0, 0));
+    ESP_ERROR_CHECK(i2c_new_master_bus(&i2c_mst_config, &i2c_bus_handle));
 
     i2c_initialized = true;
 
-    return ESP_OK;
-}
-
-esp_err_t bsp_i2c_deinit(void)
-{
-    BSP_ERROR_CHECK_RETURN_ERR(i2c_driver_delete(BSP_I2C_NUM));
-    i2c_initialized = false;
     return ESP_OK;
 }
 
@@ -199,35 +193,57 @@ err:
     return ret;
 }
 
-esp_err_t bsp_touch_new(const bsp_touch_config_t *config, esp_lcd_touch_handle_t *ret_touch)
-{
-    /* Initilize I2C */
-    BSP_ERROR_CHECK_RETURN_ERR(bsp_i2c_init());
+// esp_err_t bsp_touch_new(const bsp_touch_config_t *config, esp_lcd_touch_handle_t *ret_touch)
+// {
+//     /* Initilize I2C */
+//     BSP_ERROR_CHECK_RETURN_ERR(bsp_i2c_init());
 
-    /* Initialize touch */
-    const esp_lcd_touch_config_t tp_cfg = {
-        .x_max = BSP_LCD_H_RES,
-        .y_max = BSP_LCD_V_RES,
-        .rst_gpio_num = BSP_LCD_TOUCH_RST, // Shared with LCD reset
-        .int_gpio_num = BSP_LCD_TOUCH_INT,
-        .levels = {
-            .reset = 0,
-            .interrupt = 0,
-        },
-        .flags = {
-            .swap_xy = 0,
-            .mirror_x = 0,
-            .mirror_y = 0,
-        },
-    };
-    const esp_lcd_panel_io_i2c_config_t tp_io_config = ESP_LCD_TOUCH_IO_I2C_GT9895_CONFIG();
-    ESP_RETURN_ON_ERROR(esp_lcd_new_panel_io_i2c((esp_lcd_i2c_bus_handle_t)BSP_I2C_NUM, &tp_io_config, &tp_io_handle), TAG, "");
+//     /* Initialize touch */
+//     const esp_lcd_touch_config_t tp_cfg = {
+//         .x_max = BSP_LCD_H_RES,
+//         .y_max = BSP_LCD_V_RES,
+//         .rst_gpio_num = BSP_LCD_TOUCH_RST, // Shared with LCD reset
+//         .int_gpio_num = BSP_LCD_TOUCH_INT,
+//         .levels = {
+//             .reset = 0,
+//             .interrupt = 0,
+//         },
+//         .flags = {
+//             .swap_xy = 0,
+//             .mirror_x = 0,
+//             .mirror_y = 0,
+//         },
+//     };
+//     const esp_lcd_panel_io_i2c_config_t tp_io_config = ESP_LCD_TOUCH_IO_I2C_GT9895_CONFIG();
+//     ESP_RETURN_ON_ERROR(esp_lcd_new_panel_io_i2c((esp_lcd_i2c_bus_handle_t)BSP_I2C_NUM, &tp_io_config, &tp_io_handle), TAG, "");
 
-    return esp_lcd_touch_new_i2c_gt9895(tp_io_handle, &tp_cfg, ret_touch);
-    // return ESP_OK;
-}
+//     return esp_lcd_touch_new_i2c_gt9895(tp_io_handle, &tp_cfg, ret_touch);
+//     // return ESP_OK;
+// }
+
+
 
 #if (BSP_CONFIG_NO_GRAPHIC_LIB == 0)
+static void lvgl_port_touchpad_read(lv_indev_t *indev_drv, lv_indev_data_t *data)
+{
+    static int32_t last_x = 0;
+    static int32_t last_y = 0;
+
+    if (bsp_touchpad_read_point(&last_x, &last_y, 1) > 0)
+    {
+
+        ESP_LOGI(TAG, "touch x=%d, y=%d", data->point.x, data->point.y);
+        data->state = LV_INDEV_STATE_PR;
+    }
+    else
+    {
+        data->state = LV_INDEV_STATE_REL;
+    }
+
+    data->point.x = lv_map(last_x, 0, 1024, 0, BSP_LCD_H_RES);
+    data->point.y = lv_map(last_y, 0, 2400, 0, BSP_LCD_V_RES);
+}
+
 static lv_display_t *bsp_display_lcd_init(const bsp_display_cfg_t *cfg)
 {
     assert(cfg != NULL);
@@ -262,19 +278,32 @@ static lv_display_t *bsp_display_lcd_init(const bsp_display_cfg_t *cfg)
     return lvgl_port_add_disp_dsi(&disp_cfg, NULL);
 }
 
-static lv_indev_t *bsp_display_indev_init(lv_display_t *disp)
+static lv_indev_t *bsp_display_indev_init(void)
 {
-    esp_lcd_touch_handle_t tp;
-    BSP_ERROR_CHECK_RETURN_NULL(bsp_touch_new(NULL, &tp));
-    assert(tp);
+    printf("Initilize I2C\n");
+    ESP_ERROR_CHECK(bsp_i2c_init());
 
-    /* Add touch input (for selected screen) */
-    const lvgl_port_touch_cfg_t touch_cfg = {
-        .disp = disp,
-        .handle = tp,
-    };
+    esp_lcd_panel_io_i2c_config_t tp_io_config = ESP_LCD_TOUCH_IO_I2C_GT9895_CONFIG();
+    tp_io_config.scl_speed_hz = CONFIG_BSP_I2C_CLK_SPEED_HZ;
 
-    return lvgl_port_add_touch(&touch_cfg);
+    if (ESP_OK == i2c_master_probe(i2c_bus_handle, ESP_LCD_TOUCH_IO_I2C_GT9895_ADDRESS, 100))
+    {
+        ESP_LOGI(TAG, "Found touch GT9895");
+    }
+    else
+    {
+        ESP_LOGE(TAG, "Touch not found");
+    }
+
+    printf("Initilize touch panel\n");
+    ESP_ERROR_CHECK(esp_lcd_new_panel_io_i2c(i2c_bus_handle, &tp_io_config, &tp_io_handle));
+
+
+    static lv_indev_drv_t indev_drv;
+    lv_indev_drv_init(&indev_drv);
+    indev_drv.type = LV_INDEV_TYPE_POINTER;
+    indev_drv.read_cb = lvgl_port_touchpad_read;
+    return lv_indev_drv_register(&indev_drv);
 }
 
 int bsp_touchpad_read_point(int32_t *last_x, int32_t *last_y, int point_num)
@@ -284,7 +313,7 @@ int bsp_touchpad_read_point(int32_t *last_x, int32_t *last_y, int point_num)
     esp_lcd_panel_io_rx_param(tp_io_handle, 0x10308, buffer, 90);
 
     uint8_t touchNum = buffer[2] & 0xF;
-    int x = 0, y = 0, w = 0;
+    // int x = 0, y = 0, w = 0;
     uint8_t *ptr = &buffer[8];
     for (int i = 0; i < point_num; i++)
     {
@@ -295,14 +324,11 @@ int bsp_touchpad_read_point(int32_t *last_x, int32_t *last_y, int point_num)
         }
         *last_x = *((uint16_t *)(ptr + 2));
         *last_y = *((uint16_t *)(ptr + 4));
-        w = *((uint16_t *)(ptr + 6));
+        // w = *((uint16_t *)(ptr + 6));
         ptr += 8;
-
         // printf("x[%d]:%d y:%d w:%d  |  ", id, x, y, w);
     }
     return (touchNum > 0);
-    // if (touchNum > 0)
-    //     printf("\n");
 }
 
 lv_display_t *bsp_display_start(void)
@@ -332,7 +358,7 @@ lv_display_t *bsp_display_start_with_config(const bsp_display_cfg_t *cfg)
 
     BSP_NULL_CHECK(disp = bsp_display_lcd_init(cfg), NULL);
 
-    BSP_NULL_CHECK(disp_indev = bsp_display_indev_init(disp), NULL);
+    bsp_display_indev_init();
 
     return disp;
 }

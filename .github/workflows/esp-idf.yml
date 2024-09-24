@@ -17,6 +17,7 @@ jobs:
 
         example: 
           - examples/i2c_tools
+          - examples/mipi_dsi_lvgl8
           - examples/mipi_dsi_lvgl9
           - examples/nvs_rw_blob
           - examples/touch_test
