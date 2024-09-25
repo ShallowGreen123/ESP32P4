@@ -221,8 +221,6 @@ err:
 //     // return ESP_OK;
 // }
 
-
-
 #if (BSP_CONFIG_NO_GRAPHIC_LIB == 0)
 static void lvgl_port_touchpad_read(lv_indev_drv_t *indev_drv, lv_indev_data_t *data)
 {
