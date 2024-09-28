@@ -26,16 +26,16 @@ static const char *TAG = "example";
 //////////////////// Please update the following configuration according to your LCD Spec //////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// FPS = 80000000/(40+140+40+800)/(4+16+16+1280) = 60Hz
+// FPS = 80000000/(80+50+150+568)/(40+120+80+1232) = 64Hz
 #define EXAMPLE_MIPI_DSI_DPI_CLK_MHZ 80
-#define EXAMPLE_MIPI_DSI_LCD_H_RES 568
-#define EXAMPLE_MIPI_DSI_LCD_V_RES 1232
-#define EXAMPLE_MIPI_DSI_LCD_HSYNC 40
-#define EXAMPLE_MIPI_DSI_LCD_HBP 140
-#define EXAMPLE_MIPI_DSI_LCD_HFP 40
-#define EXAMPLE_MIPI_DSI_LCD_VSYNC 4
-#define EXAMPLE_MIPI_DSI_LCD_VBP 16
-#define EXAMPLE_MIPI_DSI_LCD_VFP 16
+#define EXAMPLE_MIPI_DSI_LCD_H_RES  568
+#define EXAMPLE_MIPI_DSI_LCD_V_RES  1232
+#define EXAMPLE_MIPI_DSI_LCD_HSYNC  50
+#define EXAMPLE_MIPI_DSI_LCD_HBP    150
+#define EXAMPLE_MIPI_DSI_LCD_HFP    50
+#define EXAMPLE_MIPI_DSI_LCD_VSYNC  40
+#define EXAMPLE_MIPI_DSI_LCD_VBP    120
+#define EXAMPLE_MIPI_DSI_LCD_VFP    80
 
 #define EXAMPLE_MIPI_DSI_LANE_NUM 2             // 2 data lanes
 #define EXAMPLE_MIPI_DSI_LANE_BITRATE_MBPS 1000 // 1Gbps

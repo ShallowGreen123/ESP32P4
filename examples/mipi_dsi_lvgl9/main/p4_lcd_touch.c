@@ -26,10 +26,10 @@
 #define BSP_GPIO_RST (21)
 #define BSP_GPIO_INT (22)
 
-// #define BSP_LCD_H_RES      (568)
-// #define BSP_LCD_V_RES      (1232)
-#define BSP_LCD_H_RES (1024)
-#define BSP_LCD_V_RES (600)
+#define BSP_LCD_H_RES      (568)
+#define BSP_LCD_V_RES      (1232)
+// #define BSP_LCD_H_RES (1024)
+// #define BSP_LCD_V_RES (600)
 
 static const char *TAG = "TOUCH";
 static i2c_master_bus_handle_t i2c_bus_handle;
