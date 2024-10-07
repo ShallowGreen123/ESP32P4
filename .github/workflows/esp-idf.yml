@@ -16,6 +16,7 @@ jobs:
         idf_ver: ["latest"]
 
         example: 
+          - examples/esp_ui_lvgl8
           - examples/i2c_tools
           - examples/mipi_dsi_lvgl8
           - examples/mipi_dsi_lvgl9
