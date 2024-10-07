@@ -16,16 +16,16 @@ LV_IMG_DECLARE(esp_ui_phone_568_1232_recents_screen_trash_image);
 
 #define ESP_UI_PHONE_568_1232_DARK_RECENTS_SCREEN_SNAPSHOT_DATA() \
     {                                                             \
-        .main_size = ESP_UI_STYLE_SIZE_RECT(614, 420),            \
+        .main_size = ESP_UI_STYLE_SIZE_RECT(260, 420),            \
         .title = {                                                \
-            .main_size = ESP_UI_STYLE_SIZE_RECT(614, 60),         \
+            .main_size = ESP_UI_STYLE_SIZE_RECT(260, 60),         \
             .main_layout_column_pad = 10,                         \
             .icon_size = ESP_UI_STYLE_SIZE_SQUARE(36),            \
             .text_font = ESP_UI_STYLE_FONT_SIZE(22),              \
             .text_color = ESP_UI_STYLE_COLOR(0xFFFFFF),           \
         },                                                        \
         .image = {                                                \
-            .main_size = ESP_UI_STYLE_SIZE_RECT(614, 360),        \
+            .main_size = ESP_UI_STYLE_SIZE_RECT(260, 360),        \
             .radius = 22,                                         \
         },                                                        \
     }
