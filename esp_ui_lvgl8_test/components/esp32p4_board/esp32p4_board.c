@@ -3,7 +3,7 @@
 #include "sdkconfig.h"
 #include "driver/gpio.h"
 #include "driver/ledc.h"
-#include "driver/i2c_master.h"
+// #include "driver/i2c_master.h"
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_check.h"
@@ -40,19 +40,104 @@ esp_err_t bsp_i2c_init(void)
         return ESP_OK;
     }
 
-    i2c_master_bus_config_t i2c_mst_config = {
-        .clk_source = I2C_CLK_SRC_DEFAULT,
-        .i2c_port = BSP_I2C_NUM,
-        .scl_io_num = BSP_I2C_SCL,
+    const i2c_config_t i2c_conf = {
+        .mode = I2C_MODE_MASTER,
         .sda_io_num = BSP_I2C_SDA,
-        .flags.enable_internal_pullup = false, // no pull-up
-        .glitch_ignore_cnt = 7,
+        .sda_pullup_en = GPIO_PULLUP_DISABLE,
+        .scl_io_num = BSP_I2C_SCL,
+        .scl_pullup_en = GPIO_PULLUP_DISABLE,
+        .master.clk_speed = CONFIG_BSP_I2C_CLK_SPEED_HZ
     };
-    ESP_ERROR_CHECK(i2c_new_master_bus(&i2c_mst_config, &i2c_bus_handle));
+    BSP_ERROR_CHECK_RETURN_ERR(i2c_param_config(BSP_I2C_NUM, &i2c_conf));
+    BSP_ERROR_CHECK_RETURN_ERR(i2c_driver_install(BSP_I2C_NUM, i2c_conf.mode, 0, 0, 0));
 
     i2c_initialized = true;
 
     return ESP_OK;
+}
+
+esp_err_t bsp_sdcard_mount(void)
+{
+    const esp_vfs_fat_sdmmc_mount_config_t mount_config = {
+#ifdef CONFIG_BSP_SD_FORMAT_ON_MOUNT_FAIL
+        .format_if_mount_failed = true,
+#else
+        .format_if_mount_failed = false,
+#endif
+        .max_files = 5,
+        .allocation_unit_size = 64 * 1024
+    };
+
+    sdmmc_host_t host = SDMMC_HOST_DEFAULT();
+    host.max_freq_khz = SDMMC_FREQ_HIGHSPEED;
+
+    sd_pwr_ctrl_ldo_config_t ldo_config = {
+        .ldo_chan_id = 4,
+    };
+    sd_pwr_ctrl_handle_t pwr_ctrl_handle = NULL;
+    esp_err_t ret = sd_pwr_ctrl_new_on_chip_ldo(&ldo_config, &pwr_ctrl_handle);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to create a new on-chip LDO power control driver");
+        return ret;
+    }
+    host.pwr_ctrl_handle = pwr_ctrl_handle;
+
+    const sdmmc_slot_config_t slot_config = {
+        .clk = BSP_SD_CLK,
+        .cmd = BSP_SD_CMD,
+        .d0 = BSP_SD_D0,
+        .d1 = BSP_SD_D1,
+        .d2 = BSP_SD_D2,
+        .d3 = BSP_SD_D3,
+        .d4 = GPIO_NUM_NC,
+        .d5 = GPIO_NUM_NC,
+        .d6 = GPIO_NUM_NC,
+        .d7 = GPIO_NUM_NC,
+        .cd = SDMMC_SLOT_NO_CD,
+        .wp = SDMMC_SLOT_NO_WP,
+        .width = 4,
+        .flags = 0,
+    };
+
+    return esp_vfs_fat_sdmmc_mount(BSP_SD_MOUNT_POINT, &host, &slot_config, &mount_config, &bsp_sdcard);
+}
+
+esp_err_t bsp_sdcard_unmount(void)
+{
+    return esp_vfs_fat_sdcard_unmount(BSP_SD_MOUNT_POINT, bsp_sdcard);
+}
+
+esp_err_t bsp_spiffs_mount(void)
+{
+    esp_vfs_spiffs_conf_t conf = {
+        .base_path = CONFIG_BSP_SPIFFS_MOUNT_POINT,
+        .partition_label = CONFIG_BSP_SPIFFS_PARTITION_LABEL,
+        .max_files = CONFIG_BSP_SPIFFS_MAX_FILES,
+#ifdef CONFIG_BSP_SPIFFS_FORMAT_ON_MOUNT_FAIL
+        .format_if_mount_failed = true,
+#else
+        .format_if_mount_failed = false,
+#endif
+    };
+
+    esp_err_t ret_val = esp_vfs_spiffs_register(&conf);
+
+    BSP_ERROR_CHECK_RETURN_ERR(ret_val);
+
+    size_t total = 0, used = 0;
+    ret_val = esp_spiffs_info(conf.partition_label, &total, &used);
+    if (ret_val != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to get SPIFFS partition information (%s)", esp_err_to_name(ret_val));
+    } else {
+        ESP_LOGI(TAG, "Partition size: total: %d, used: %d", total, used);
+    }
+
+    return ret_val;
+}
+
+esp_err_t bsp_spiffs_unmount(void)
+{
+    return esp_vfs_spiffs_unregister(CONFIG_BSP_SPIFFS_PARTITION_LABEL);
 }
 
 // Bit number used to represent command and parameter
@@ -283,19 +368,19 @@ static lv_indev_t *bsp_display_indev_init(void)
     ESP_ERROR_CHECK(bsp_i2c_init());
 
     esp_lcd_panel_io_i2c_config_t tp_io_config = ESP_LCD_TOUCH_IO_I2C_GT9895_CONFIG();
-    tp_io_config.scl_speed_hz = CONFIG_BSP_I2C_CLK_SPEED_HZ;
+    // tp_io_config.scl_speed_hz = CONFIG_BSP_I2C_CLK_SPEED_HZ;
 
-    if (ESP_OK == i2c_master_probe(i2c_bus_handle, ESP_LCD_TOUCH_IO_I2C_GT9895_ADDRESS, 100))
-    {
-        ESP_LOGI(TAG, "Found touch GT9895");
-    }
-    else
-    {
-        ESP_LOGE(TAG, "Touch not found");
-    }
+    // if (ESP_OK == i2c_master_probe((esp_lcd_i2c_bus_handle_t)BSP_I2C_NUM, ESP_LCD_TOUCH_IO_I2C_GT9895_ADDRESS, 100))
+    // {
+    //     ESP_LOGI(TAG, "Found touch GT9895");
+    // }
+    // else
+    // {
+    //     ESP_LOGE(TAG, "Touch not found");
+    // }
 
     printf("Initilize touch panel\n");
-    ESP_ERROR_CHECK(esp_lcd_new_panel_io_i2c(i2c_bus_handle, &tp_io_config, &tp_io_handle));
+    ESP_ERROR_CHECK(esp_lcd_new_panel_io_i2c((esp_lcd_i2c_bus_handle_t)BSP_I2C_NUM, &tp_io_config, &tp_io_handle));
 
 
     static lv_indev_drv_t indev_drv;

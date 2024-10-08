@@ -2,7 +2,7 @@
 
 #include "nvs.h"
 #include "lvgl.h"
-// #include "bsp_board_extra.h"
+#include "bsp_board_extra.h"
 #include "esp_ui.hpp"
 
 typedef struct {
@@ -67,7 +67,7 @@ private:
     uint16_t best_score;
     uint16_t _weight_max;
     nvs_handle_t nvs_handle;
-    // file_iterator_instance_t *_file_iterator;
+    file_iterator_instance_t *_file_iterator;
     cell_weight_t _cells_weight[4][4];
     lv_obj_t *_cur_score_label, *_best_score_label;
     lv_obj_t *_background_cells[4][4];

@@ -22,3 +22,5 @@ if(CONFIG_LV_MEM_CUSTOM)
             "-DLV_MEM_CUSTOM_ALLOC(x)=heap_caps_malloc(x, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT)"
     )
 endif()
+
+spiffs_create_partition_image(storage ../spiffs FLASH_IN_PROJECT)

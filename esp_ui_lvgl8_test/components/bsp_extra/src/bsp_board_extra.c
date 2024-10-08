@@ -1,4 +1,9 @@
-#if 0
+/*
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
@@ -17,8 +22,6 @@
 #include "bsp_board_extra.h"
 
 #define BSP_ES7210_CODEC_ADDR   (0x82)
-
-#define CONFIG_BSP_I2S_NUM 1
 
 /* Can be used for `i2s_std_gpio_config_t` and/or `i2s_std_config_t` initialization */
 #define BSP_I2S_GPIO_CFG       \
@@ -164,7 +167,6 @@ esp_err_t bsp_extra_audio_init(const i2s_std_config_t *i2s_config)
     return ESP_OK;
 }
 
-
 esp_codec_dev_handle_t bsp_extra_audio_codec_speaker_init(void)
 {
     if (i2s_data_if == NULL) {
@@ -290,6 +292,7 @@ static void audio_callback(audio_player_cb_ctx_t *ctx)
  * Extra Board Function
  *
  **************************************************************************************************/
+
 esp_err_t bsp_extra_i2s_read(void *audio_buffer, size_t len, size_t *bytes_read, uint32_t timeout_ms)
 {
     esp_err_t ret = ESP_OK;
@@ -380,13 +383,13 @@ esp_err_t bsp_extra_codec_init()
         return ESP_OK;
     }
 
-    // play_dev_handle = bsp_extra_audio_codec_speaker_init();
-    // assert((play_dev_handle) && "play_dev_handle not initialized");
+    play_dev_handle = bsp_extra_audio_codec_speaker_init();
+    assert((play_dev_handle) && "play_dev_handle not initialized");
 
-    // record_dev_handle = bsp_extra_audio_codec_microphone_init();
-    // assert((record_dev_handle) && "record_dev_handle not initialized");
+    record_dev_handle = bsp_extra_audio_codec_microphone_init();
+    assert((record_dev_handle) && "record_dev_handle not initialized");
 
-    // bsp_extra_codec_set_fs(CODEC_DEFAULT_SAMPLE_RATE, CODEC_DEFAULT_BIT_WIDTH, CODEC_DEFAULT_CHANNEL);
+    bsp_extra_codec_set_fs(CODEC_DEFAULT_SAMPLE_RATE, CODEC_DEFAULT_BIT_WIDTH, CODEC_DEFAULT_CHANNEL);
 
     _is_audio_init = true;
 
@@ -484,5 +487,3 @@ bool bsp_extra_player_is_playing_by_index(file_iterator_instance_t *instance, in
 {
     return (index == file_iterator_get_index(instance));
 }
-
-#endif

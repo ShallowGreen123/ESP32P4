@@ -29,6 +29,10 @@
 #define CONFIG_BSP_I2C_NUM 1
 #define CONFIG_BSP_I2C_CLK_SPEED_HZ 400000
 
+#define CONFIG_BSP_SD_MOUNT_POINT "/sdcard"
+#define CONFIG_BSP_SPIFFS_MOUNT_POINT "/spiffs"
+#define CONFIG_BSP_SPIFFS_PARTITION_LABEL "storage"
+#define CONFIG_BSP_SPIFFS_MAX_FILES 5
 
 /**************************************************************************************************
  *  ESP pinout
@@ -84,6 +88,83 @@ esp_err_t bsp_i2c_init(void);
  *
  */
 esp_err_t bsp_i2c_deinit(void);
+
+/**************************************************************************************************
+ *
+ * SPIFFS
+ *
+ * After mounting the SPIFFS, it can be accessed with stdio functions ie.:
+ * \code{.c}
+ * FILE* f = fopen(BSP_SPIFFS_MOUNT_POINT"/hello.txt", "w");
+ * fprintf(f, "Hello World!\n");
+ * fclose(f);
+ * \endcode
+ **************************************************************************************************/
+#define BSP_SPIFFS_MOUNT_POINT      CONFIG_BSP_SPIFFS_MOUNT_POINT
+
+/**
+ * @brief Mount SPIFFS to virtual file system
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_STATE if esp_vfs_spiffs_register was already called
+ *      - ESP_ERR_NO_MEM if memory can not be allocated
+ *      - ESP_FAIL if partition can not be mounted
+ *      - other error codes
+ */
+esp_err_t bsp_spiffs_mount(void);
+
+/**
+ * @brief Unmount SPIFFS from virtual file system
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_NOT_FOUND if the partition table does not contain SPIFFS partition with given label
+ *      - ESP_ERR_INVALID_STATE if esp_vfs_spiffs_unregister was already called
+ *      - ESP_ERR_NO_MEM if memory can not be allocated
+ *      - ESP_FAIL if partition can not be mounted
+ *      - other error codes
+ */
+esp_err_t bsp_spiffs_unmount(void);
+
+/**************************************************************************************************
+ *
+ * uSD card
+ *
+ * After mounting the uSD card, it can be accessed with stdio functions ie.:
+ * \code{.c}
+ * FILE* f = fopen(BSP_MOUNT_POINT"/hello.txt", "w");
+ * fprintf(f, "Hello %s!\n", bsp_sdcard->cid.name);
+ * fclose(f);
+ * \endcode
+ **************************************************************************************************/
+#define BSP_SD_MOUNT_POINT      CONFIG_BSP_SD_MOUNT_POINT
+extern sdmmc_card_t *bsp_sdcard;
+
+/**
+ * @brief Mount microSD card to virtual file system
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_STATE if esp_vfs_fat_sdmmc_mount was already called
+ *      - ESP_ERR_NO_MEM if memory cannot be allocated
+ *      - ESP_FAIL if partition cannot be mounted
+ *      - other error codes from SDMMC or SPI drivers, SDMMC protocol, or FATFS drivers
+ */
+esp_err_t bsp_sdcard_mount(void);
+
+/**
+ * @brief Unmount microSD card from virtual file system
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_NOT_FOUND if the partition table does not contain FATFS partition with given label
+ *      - ESP_ERR_INVALID_STATE if esp_vfs_fat_spiflash_mount was already called
+ *      - ESP_ERR_NO_MEM if memory can not be allocated
+ *      - ESP_FAIL if partition can not be mounted
+ *      - other error codes from wear levelling library, SPI flash driver, or FATFS drivers
+ */
+esp_err_t bsp_sdcard_unmount(void);
 
 /**************************************************************************************************
  *

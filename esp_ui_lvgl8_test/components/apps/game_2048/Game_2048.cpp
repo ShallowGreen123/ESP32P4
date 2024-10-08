@@ -1,7 +1,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <ctime>
-// #include "bsp/esp-bsp.h"
+#include "esp-bsp.h"
 #include "Game_2048.hpp"
 #include "esp_log.h"
 
@@ -68,7 +68,7 @@ Game2048::Game2048(bool use_status_bar, bool use_navigation_bar):
     best_score(0),
     _weight_max(0),
     nvs_handle(NULL),
-    // _file_iterator(NULL),
+    _file_iterator(NULL),
     _cur_score_label(NULL),
     _best_score_label(NULL),
     _background_cells({}),
@@ -313,15 +313,15 @@ bool Game2048::init(void)
     ESP_UI_PhoneManager& manager = phone->getManager();
     _gesture = manager.getGesture();
 
-    // if (bsp_extra_player_init() != ESP_OK) {
-    //     ESP_LOGE(TAG, "Play init with SPIFFS failed");
-    //     return false;
-    // }
+    if (bsp_extra_player_init() != ESP_OK) {
+        ESP_LOGE(TAG, "Play init with SPIFFS failed");
+        return false;
+    }
 
-    // if (bsp_extra_file_instance_init(BSP_SPIFFS_MOUNT_POINT MUSIC_DIR, &_file_iterator) != ESP_OK) {
-    //     ESP_LOGE(TAG, "bsp_extra_file_instance_init failed");
-    //     return false;
-    // }
+    if (bsp_extra_file_instance_init(BSP_SPIFFS_MOUNT_POINT MUSIC_DIR, &_file_iterator) != ESP_OK) {
+        ESP_LOGE(TAG, "bsp_extra_file_instance_init failed");
+        return false;
+    }
 
     // err = nvs_open(NVS_STORAGE_NAMESPACE, NVS_READWRITE, &nvs_handle);
     // if (err != ESP_OK) {
@@ -387,21 +387,21 @@ void Game2048::showEmojiScore(int score)
     } else if (score == 0) {
         index = 1;
         lv_label_set_text_fmt(_emoji_label, "Score[%d]: Weak...", score);
-        // bsp_extra_player_play_file(MUSIC_WEAK);
+        bsp_extra_player_play_file(MUSIC_WEAK);
     } else if (score < EMOJI_SCORE_NORMAL) {
         index = 2;
         lv_label_set_text_fmt(_emoji_label, "Score[%d]: Normal.", score);
-        // bsp_extra_player_play_file(MUSIC_NORM);
+        bsp_extra_player_play_file(MUSIC_NORM);
     }
     else if (score < EMOJI_SCORE_GOOD) {
         index = 3;
         lv_label_set_text_fmt(_emoji_label, "Score[%d]: Good!", score);
-        // bsp_extra_player_play_file(MUSIC_GOOD);
+        bsp_extra_player_play_file(MUSIC_GOOD);
     }
     else {
         index = 4;
         lv_label_set_text_fmt(_emoji_label, "Score[%d]: Excellent!", score);
-        // bsp_extra_player_play_file(MUSIC_EXCL);
+        bsp_extra_player_play_file(MUSIC_EXCL);
     }
 
     for (int i = 0; i < 6; i++) {
