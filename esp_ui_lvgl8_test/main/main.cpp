@@ -21,8 +21,8 @@
 #include "display.h"
 
 // esp-ui
-#include "esp_ui.hpp"
-#include "esp_ui_phone_568_1232_stylesheet.h"
+#include "esp_brookesia.hpp"
+#include "stylesheet/dark/esp_brookesia_phone_568_1232_stylesheet.h"
 #include "app_examples/phone/squareline/src/phone_app_squareline.hpp"
 #include "apps.h"
 
@@ -68,56 +68,48 @@ extern "C" void app_main(void)
     // lv_demo_stress();
 
     /* esp-ui demo */
-    ESP_UI_Phone *phone = new ESP_UI_Phone(disp);
+    ESP_Brookesia_Phone *phone = new ESP_Brookesia_Phone(disp);
     assert(phone != nullptr && "Failed to create phone");
 
-    ESP_UI_PhoneStylesheet_t *phone_stylesheet = new ESP_UI_PhoneStylesheet_t ESP_UI_PHONE_568_1232_DARK_STYLESHEET();
-    ESP_UI_CHECK_NULL_EXIT(phone_stylesheet, "Create phone stylesheet failed");
+    ESP_Brookesia_PhoneStylesheet_t *phone_stylesheet = new ESP_Brookesia_PhoneStylesheet_t ESP_BROOKESIA_PHONE_568_1232_DARK_STYLESHEET();
+    ESP_BROOKESIA_CHECK_NULL_EXIT(phone_stylesheet, "Create phone stylesheet failed");
 
-    ESP_UI_StyleSize_t calibrate_size = (*phone_stylesheet).core.screen_size;
-    ESP_UI_LOGI("Add stylesheet(%s - %dx%d)", (*phone_stylesheet).core.name, calibrate_size.width, calibrate_size.height);
+    ESP_Brookesia_StyleSize_t calibrate_size = (*phone_stylesheet).core.screen_size;
+    ESP_BROOKESIA_LOGI("Add stylesheet(%s - %dx%d)", (*phone_stylesheet).core.name, calibrate_size.width, calibrate_size.height);
 
-    ESP_UI_CHECK_FALSE_EXIT(phone->addStylesheet(*phone_stylesheet), "Add phone stylesheet failed");
-    ESP_UI_CHECK_FALSE_EXIT(phone->activateStylesheet(*phone_stylesheet), "Activate phone stylesheet failed");
+    ESP_BROOKESIA_CHECK_FALSE_EXIT(phone->addStylesheet(*phone_stylesheet), "Add phone stylesheet failed");
+    ESP_BROOKESIA_CHECK_FALSE_EXIT(phone->activateStylesheet(*phone_stylesheet), "Activate phone stylesheet failed");
 
     assert(phone->begin() && "Failed to begin phone");
 
-    PhoneAppSquareline *smart_gadget = new PhoneAppSquareline(true, true);
-    assert(smart_gadget != nullptr && "Failed to create phone app squareline");
-    assert((phone->installApp(smart_gadget) >= 0) && "Failed to install phone app squareline");
+    /* Install apps */
+    PhoneAppSquareline *phone_app_squareline = new PhoneAppSquareline(true, true);
+    ESP_BROOKESIA_CHECK_NULL_EXIT(phone_app_squareline, "Create phone app squareline failed");
+    ESP_BROOKESIA_CHECK_FALSE_EXIT((phone->installApp(phone_app_squareline) >= 0), "Install phone app squareline failed");
 
-    Calculator *calculator = new Calculator();
+    Calculator *calculator = new Calculator(true, true);
     assert(calculator != nullptr && "Failed to create calculator");
     assert((phone->installApp(calculator) >= 0) && "Failed to begin calculator");
 
-    Game2048 *game_2048 = new Game2048();
+    Game2048 *game_2048 = new Game2048(true, true);
     assert(game_2048 != nullptr && "Failed to create game_2048");
     assert((phone->installApp(game_2048) >= 0) && "Failed to begin game_2048");
 
-    // AppSettings *app_settings = new AppSettings();
-    // assert(app_settings != nullptr && "Failed to create app_settings");
-    // assert((phone->installApp(app_settings) >= 0) && "Failed to begin app_settings");
-
-    /* Install apps */
     PhoneAppSimpleConf *phone_app_simple_conf = new PhoneAppSimpleConf(true, true);
-    ESP_UI_CHECK_NULL_EXIT(phone_app_simple_conf, "Create phone app simple conf failed");
-    ESP_UI_CHECK_FALSE_EXIT((phone->installApp(phone_app_simple_conf) >= 0), "Install phone app simple conf failed");
+    ESP_BROOKESIA_CHECK_NULL_EXIT(phone_app_simple_conf, "Create phone app simple conf failed");
+    ESP_BROOKESIA_CHECK_FALSE_EXIT((phone->installApp(phone_app_simple_conf) >= 0), "Install phone app simple conf failed");
+
     PhoneAppComplexConf *phone_app_complex_conf = new PhoneAppComplexConf(true, true);
-    ESP_UI_CHECK_NULL_EXIT(phone_app_complex_conf, "Create phone app complex conf failed");
-    ESP_UI_CHECK_FALSE_EXIT((phone->installApp(phone_app_complex_conf) >= 0), "Install phone app complex conf failed");
+    ESP_BROOKESIA_CHECK_NULL_EXIT(phone_app_complex_conf, "Create phone app complex conf failed");
+    ESP_BROOKESIA_CHECK_FALSE_EXIT((phone->installApp(phone_app_complex_conf) >= 0), "Install phone app complex conf failed");
 
-    // PhoneAppComplexConf *phone_app_complex_conf1 = new PhoneAppComplexConf(false, true);
-    // ESP_UI_CHECK_NULL_EXIT(phone_app_complex_conf1, "Create phone app complex conf failed");
-    // ESP_UI_CHECK_FALSE_EXIT((phone->installApp(phone_app_complex_conf1) >= 0), "Install phone app complex conf failed");
+    PhoneAppSimpleConf *phone_app_simple_conf1 = new PhoneAppSimpleConf(true, true);
+    ESP_BROOKESIA_CHECK_NULL_EXIT(phone_app_simple_conf1, "Create phone app simple conf failed");
+    ESP_BROOKESIA_CHECK_FALSE_EXIT((phone->installApp(phone_app_simple_conf1) >= 0), "Install phone app simple conf failed");
 
-    // PhoneAppComplexConf *phone_app_complex_conf2 = new PhoneAppComplexConf(true, false);
-    // ESP_UI_CHECK_NULL_EXIT(phone_app_complex_conf2, "Create phone app complex conf failed");
-    // ESP_UI_CHECK_FALSE_EXIT((phone->installApp(phone_app_complex_conf2) >= 0), "Install phone app complex conf failed");
-
-    // PhoneAppComplexConf *phone_app_complex_conf3 = new PhoneAppComplexConf(false, false);
-    // ESP_UI_CHECK_NULL_EXIT(phone_app_complex_conf3, "Create phone app complex conf failed");
-    // ESP_UI_CHECK_FALSE_EXIT((phone->installApp(phone_app_complex_conf3) >= 0), "Install phone app complex conf failed");
-
+    PhoneAppComplexConf *phone_app_complex_conf2 = new PhoneAppComplexConf(true, true);
+    ESP_BROOKESIA_CHECK_NULL_EXIT(phone_app_complex_conf2, "Create phone app complex conf failed");
+    ESP_BROOKESIA_CHECK_FALSE_EXIT((phone->installApp(phone_app_complex_conf2) >= 0), "Install phone app complex conf failed");
 
     bsp_display_unlock();
 }
