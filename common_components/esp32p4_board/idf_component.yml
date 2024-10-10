@@ -1,0 +1,53 @@
+dependencies:
+
+  espressif/esp_lvgl_port:
+    public: true
+    version: ^2
+
+  idf: '>=5.3'
+
+  lvgl/lvgl: '>=8,<9'
+
+  esp_codec_dev:
+    public: true
+    version: "==1.1.0"
+
+  chmorgan/esp-audio-player:
+    version: "1.0.*"
+    public: true
+
+  chmorgan/esp-file-iterator:
+    version: "1.0.0"
+    public: true
+
+  esp_lcd_touch:
+    public: true
+    version: "1.1.0"
+
+  # Custom library
+  esp_amoled_rm69a10:
+    git: https://github.com/ShallowGreen123/ESP32P4.git
+    path: "common_components/esp_amoled_rm69a10"
+    version: "*"
+
+  esp_lcd_touch_gt9895:
+    git: https://github.com/ShallowGreen123/ESP32P4.git
+    path: "common_components/esp_lcd_touch_gt9895"
+    version: "*"
+  
+  esp-brookesia-phone_568_1232_stylesheet:
+    git: https://github.com/ShallowGreen123/ESP32P4.git
+    path: "common_components/esp-brookesia-phone_568_1232_stylesheet"
+    version: "*"
+
+  bsp_extra:
+    git: https://github.com/ShallowGreen123/ESP32P4.git
+    path: "common_components/bsp_extra"
+    version: "*"
+
+
+
+description: Board Support Package (BSP) for ESP32-P4 Board (Based on LVGL V8)
+targets:
+- esp32p4
+version: 1.0.0
